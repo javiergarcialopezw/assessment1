@@ -1,0 +1,36 @@
+version: "3.8"
+services:
+  cache:
+    container_name: redis_cache
+    image: redis:latest
+    restart: always
+    ports:
+      - "6379:6379"
+    volumes:
+      - ./redis/config/redis.conf:/redis.conf
+    command: ["redis-server", "--appendonly", "yes"]
+  backend:
+    container_name: node_server
+    build:
+      context: ./node_server/
+    image: javiergarcialopezw/node_server_image
+    depends_on:
+      - cache
+    ports:
+      - 9000:${APP_PORT}
+    environment:
+      APP_PORT: ${APP_PORT}
+      NODE_ENV: ${NODE_ENV}
+      GOOGLE_MAPS_API_KEY: ${GOOGLE_MAPS_API_KEY}
+      WEATHER_BIT_API_KEY: ${WEATHER_BIT_API_KEY}
+      REDIS_HOST: redis://redis_cache
+      REDIS_PORT: 6379
+  frontend:
+    container_name: react_front
+    build:
+      context: ./react_front/
+    image: javiergarcialopezw/react_front_image
+    depends_on:
+      - backend
+    ports:
+      - 3000:3000
